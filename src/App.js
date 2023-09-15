@@ -1,7 +1,8 @@
-import React,{useState} from "react";
+import React,{useState, useEffect} from "react";
 import {AiOutlinePlus} from 'react-icons/ai'
 import Do from "./Do";
-
+import {db} from './Firebase';
+import { query, collection, onSnapshot, updateDoc, doc, addDoc, deleteDoc } from "firebase/firestore";
 
 const styles = {
   bg: `h-screen w-screen p-4 bg-gradient-to-r from-[#AF69EF] to-[#A45EE5]`,
@@ -15,22 +16,80 @@ const styles = {
 
 function App() {
 
-const [todo, setTodo] = useState(['Code for 8hrs', 'Go for Hiking'])
+const [todo, setTodo] = useState([]);
+const [text, setText] = useState('');
+
+// carryout all the todo function(creating, updating, deleting all todo from firebase)
+
+useEffect(()=>{
+  const a = query(collection(db, 'todos'))
+  const unsubscribe = onSnapshot(a, (querySnapshot) => {
+    let todosArray = []
+    querySnapshot.forEach((entry) => {
+      todosArray.push({...entry.data(), id: entry.id})
+    });
+    setTodo(todosArray)
+  })
+  return () => unsubscribe()
+},[])
+
+
+//updating firebase
+const taskComplete = async (todos) => {
+  await updateDoc(doc(db, 'todos', todos.id),{
+    completed: !todos.completed
+  })
+};
+
+
+//creating todo to add to existing ones
+const newTodo = async (e) => {
+  e.preventDefault(e)
+  if (text === '') {
+    alert('please enter a new item')
+    return
+  }
+  await addDoc(collection(db, 'todos'), {
+    text: text,
+    completed: false,
+  })
+  setText('');
+};
+
+// Deleting items from todo list
+const deleteTodo = async (id) => {
+  await deleteDoc(doc(db, 'todos', id))
+}
 
   return (
     <div className={styles.bg}>
       <div className={styles.container}>
         <h3 className={styles.heading}>T0-do App</h3>
-        <form className={styles.form}>
-          <input type="text" placeholder="Add To-do" className={styles.input} />
-          <button className={styles.button}><AiOutlinePlus size={30} /></button>
+
+        <form 
+        onSubmit={newTodo} 
+        className={styles.form}>
+
+          <input 
+          value={text} 
+          onChange={(e) =>setText(e.target.value)} 
+          type="text" 
+          placeholder="Add To-do" 
+          className={styles.input} />
+
+          <button 
+          className={styles.button}>
+            <AiOutlinePlus size={30} />
+            </button>
         </form>
+
         <ul>
           {todo.map((todos, index)=>(
-            <Do key={index} todos={todos} />
+            <Do key={index} todos={todos} taskComplete={taskComplete} deleteTodo={deleteTodo} />
           ))}
         </ul>
-        <p className={styles.count}>You Have 2 To-dos</p>
+
+        {todo.length < 1 ? null : <p className={styles.count}>{`You Have ${todo.length} todos`}</p>}
       </div>
     </div>
   );

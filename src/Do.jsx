@@ -10,16 +10,29 @@ const style = {
     button: `cursor-pointer flex items-center`
 }
 
-const Do = ({todos}) => {
+const Do = ({todos, taskComplete, deleteTodo}) => {
   return (
-    <li className={style.li}>
+    <li 
+    className={todos.completed ? style.liComplete : style.li}>
         <div className={style.row}>
-            <input type='checkbox' />
-            <p className={style.text}>{todos}</p>
+
+            <input 
+            onChange={()=>taskComplete(todos)} 
+            type='checkbox' 
+            checked={todos.completed ? 'checked' : ''} />
+
+            <p 
+            onClick={()=>taskComplete(todos)} 
+            className={todos.completed ? style.textComplete : style.text}>
+              {todos.text}
+              </p>
         </div>
-        <button><FaRegTrashAlt /></button>
+
+        <button onClick={()=>deleteTodo(todos.id)}>
+          <FaRegTrashAlt />
+          </button>
     </li>
   )
-}
+};
 
 export default Do;
